@@ -1,4 +1,4 @@
-<tool id="tp_awk_tool" name="Text reformatting" version="@BASE_VERSION@.1">
+<tool id="tp_awk_tool" name="Text reformatting" version="@BASE_VERSION@.2">
     <description>with awk</description>
     <macros>
         <import>macros.xml</import>
@@ -9,7 +9,8 @@
     <version_command>awk --version | head -n 1</version_command>
     <command>
 <![CDATA[
-        awk
+        env -i
+        \$(which awk)
             --sandbox
             -v FS='	'
             -v OFS='	'

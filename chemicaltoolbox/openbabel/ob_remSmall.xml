@@ -1,8 +1,9 @@
-<tool id="openbabel_remSmall" name="Remove small molecules" version="@VERSION@.0">
-    <description></description>
+<tool id="openbabel_remSmall" name="Remove small molecules" version="@TOOL_VERSION@+galaxy@GALAXY_VERSION@">
+    <description>from a library of compounds</description>
     <!--parallelism method="multi" split_inputs="infile" split_mode="to_size" split_size="10000" shared_inputs="" merge_outputs="outfile"></parallelism-->
     <macros>
         <import>macros.xml</import>
+        <token name="@GALAXY_VERSION@">0</token>
     </macros>
     <expand macro="requirements"/>
     <command detect_errors="aggressive">
@@ -46,7 +47,7 @@ Filters a library of compounds and removes small molecules below a predefined in
 
 **Hint**
 
-Some libraries may contain molecules without a 1D/3D descriptor. These molecules may provoke crashes of any other tool. It is strongly adviced to run this tool before proceeding to any further steps.
+Some libraries may contain molecules without a 1D/3D descriptor, which may provoke crashes of any other tool. It is strongly advised to run this tool before proceeding to any further steps.
 
 -----
 
