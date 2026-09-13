@@ -1,14 +1,11 @@
-<tool id="bgchem_fragment_merger" name="Merging" version="0.1">
+<tool id="bgchem_fragment_merger" name="Merging" version="0.1+galaxy0" profile="23.0">
     <description>fragmented molecules</description>
     <requirements>
-        <requirement type="package" version="0.1">cheminfolib</requirement>
-        <requirement type="package">cheminfolib</requirement>
-        <requirement type="package" version="2.3.2">openbabel</requirement>
-        <requirement type="package">openbabel</requirement>
+        <requirement type="package" version="3.1.1">openbabel</requirement>
     </requirements>
-    <command interpreter='python'>
+    <command detect_errors="exit_code">
 <![CDATA[
-    merger.py
+    python '$__tool_directory__/merger.py'
         -i $infile
         -o $outfile
         --molwt-cutoff $molwt_cutoff
@@ -33,8 +30,7 @@
         <data format="smi" name="outfile" label="Fragment merging on ${on_string}"/>
     </outputs>
     <tests>
-        <test>
-        </test>
+        <test expect_failure="true" />
     </tests>
     <help>
 <![CDATA[
@@ -43,8 +39,7 @@
 
 **What this tool does**
 
-Merging small molecules together to larger compounds using predifined reactions.
-
+Merging small molecules together to larger compounds using predefined reactions.
 
 *Available options::*
 
@@ -65,7 +60,8 @@ Number of repeats:
 
 | Only fragments with marked sticky ends can be merged. To get such a file check the appropriate option in the fragmenter tool.
 |
-| With the options *Molecule dependend iteration depth* and *Number of repeats* you can adjust the created number of compounds and the actual computing time.
+| With the options *Molecule dependent iteration depth* and *Number of repeats* you can adjust the created number of compounds and the actual computing time.
+
 -----
 
 .. class:: infomark
@@ -84,5 +80,8 @@ A molecule file with new created/merged molecules.
 
 ]]>
     </help>
+    <citations>
+        <citation type="doi">10.1186/1758-2946-3-33</citation>
+    </citations>
 
 </tool>

@@ -9,7 +9,7 @@ long_description: |
   collection of tools and libraries which support reading, writing, and manipulating an
   image in over 88 major formats including important formats like DPX, GIF, JPEG, JPEG-2000, PNG, PDF, PNM, and TIFF.
 
-remote_repository_url: https://github.com/bgruening/galaxytools/new/gm/tools/image_processing/image_processing/
+remote_repository_url: https://github.com/bgruening/galaxytools/tree/master/tools/image_processing/graphicsmagick
 type: unrestricted
 categories:
   - Imaging
@@ -17,7 +17,7 @@ auto_tool_repositories:
   name_template: "{{ tool_id }}"
   description_template: "Wrapper for the GraphicsMagic suite: {{ tool_name }}"
 suite:
-  name: "graphicsmagick_suite"
+  name: "suite_graphicsmagick"
   description: Contains tools based on GraphicsMagick
   long_description: |
     GraphicsMagick is the swiss army knife of image processing.

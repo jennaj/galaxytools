@@ -1,8 +1,9 @@
-<tool id="infernal_cmstat" name="cmstat" version="@VERSION@.0">
+<tool id="infernal_cmstat" name="cmstat" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@">
     <description>Summary statistics for covariance model </description>
     <macros>
         <import>macros.xml</import>
     </macros>
+    <expand macro="xrefs"/>
     <expand macro="requirements"/>
     <expand macro="stdio" />
     <command>
@@ -24,24 +25,7 @@
 ]]>
     </command>
         <inputs>
-            <conditional name="cm_opts">
-                <param name="cm_opts_selector" type="select" label="Subject covariance models">
-                  <option value="db" selected="True">Locally installed covariance models</option>
-                  <option value="histdb">Covariance model from your history</option>
-                </param>
-                <when value="db">
-                    <param name="database" type="select" label="Covariance models">
-                        <options from_file="infernal.loc">
-                          <column name="value" index="0"/>
-                          <column name="name" index="1"/>
-                          <column name="path" index="2"/>
-                        </options>
-                    </param>
-                </when>
-                <when value="histdb">
-                    <param name="cmfile" type="data" format="cm" label="Covariance models file from the history."/>
-                </when>
-            </conditional>
+            <expand macro="DB" />
         </inputs>
     <outputs>
         <data format="tabular" name="outfile" label="cmstat on ${on_string}"/>
@@ -51,6 +35,19 @@
             <conditional name="cm_opts">
                 <param name="cm_opts_selector" value="histdb"/>
                 <param name="cmfile" value="cmstat_input.cm"/>
+            </conditional>
+            <output name="outfile" >
+                <assert_contents>
+                    <has_text text="idx"/>
+                    <has_text text="accession"/>
+                    <has_text text="nseq"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test>
+            <conditional name="cm_opts">
+                <param name="cm_opts_selector" value="db"/>
+                <param name="database" value="cmstat_input.cm"/>
             </conditional>
             <output name="outfile" >
                 <assert_contents>

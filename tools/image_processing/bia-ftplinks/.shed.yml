@@ -1,0 +1,13 @@
+name: bia_download
+owner: bgruening
+categories:
+  - Imaging
+description: Tool to query ftp links for study from bioimage archive
+long_description: |
+  Tool to query ftp links for study from bioimage archive.
+homepage_url: https://www.ebi.ac.uk/biostudies/bioimages/studies
+remote_repository_url: https://github.com/bgruening/galaxytools/tree/master/tools
+type: unrestricted
+auto_tool_repositories:
+  name_template: "{{ tool_id }}"
+  description_template: "A Tool to query ftp links by study name(s) from bioimage archive."

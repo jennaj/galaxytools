@@ -7,6 +7,7 @@ long_description: |
   Home page: https://github.com/rdkit/rdkit
   License: BSD
 
+homepage_url: https://github.com/rdkit/rdkit
 auto_tool_repositories:
   name_template: "{{ tool_id }}"
   description_template: "{{ tool_name }} tool from RDKit"
@@ -17,3 +18,5 @@ name: rdkit
 owner: bgruening
 remote_repository_url: https://github.com/bgruening/galaxytools/tree/master/chemicaltoolbox/rdkit
 type: unrestricted
+maintainers:
+  - simonbray

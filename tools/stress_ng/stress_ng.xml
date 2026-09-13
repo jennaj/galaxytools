@@ -1,0 +1,556 @@
+<tool id="stress_ng" name="stress-ng" version="@TOOL_VERSION@+galaxy@GALAXY_VERSION@" profile="@PROFILE@" license="GPL-2.0-or-later">
+    <description>stress test a computer system in various selectable ways</description>
+    <macros>
+        <token name="@TOOL_VERSION@">0.17.03</token>
+        <token name="@GALAXY_VERSION@">0</token>
+        <token name="@PROFILE@">24.0</token>
+        <macro name="sanitize_filesize">
+            <sanitizer>
+                <valid initial="string.digits">
+                    <add value="B"/>
+                    <add value="K"/>
+                    <add value="M"/>
+                    <add value="G"/>
+                    <add value="%"/>
+                </valid>
+            </sanitizer>
+        </macro>
+        <macro name="sanitize_time">
+            <sanitizer>
+                <valid initial="string.digits">
+                    <add value="s"/>
+                    <add value="m"/>
+                    <add value="h"/>
+                </valid>
+            </sanitizer>
+        </macro>
+    </macros>
+    <creator>
+        <person givenName="Björn" familyName="Grüning" url="https://github.com/bgruening" identifier="https://orcid.org/0000-0002-3079-6586"/>
+        <person givenName="Mehmet" familyName="Tekman" url="https://github.com/mtekman"/>
+    </creator>
+    <requirements>
+        <requirement type="package" version="@TOOL_VERSION@">stress-ng</requirement>
+    </requirements>
+    <stdio>
+        <exit_code range="2" level="warning" description="One or more stressors failed to run (expected in containers)"/>
+        <exit_code range="3" level="warning" description="Some stressors were skipped due to insufficient privileges (expected in containers)"/>
+    </stdio>
+    <version_command><![CDATA[stress-ng --version | sed -r 's|^.*version ([0-9.]+).*|\1|']]></version_command>
+    <command><![CDATA[
+    stress-ng
+    #if str($options.do) == "common":
+        #if str($options.cpu) != "":
+            --cpu '$options.cpu'
+        #end if
+        #if str($options.cpu_load) != "":
+            --cpu-load '$options.cpu_load'
+        #end if
+        #if str($options.hdd) != "":
+            --hdd '$options.hdd'
+        #end if
+        #if str($options.io) != "":
+            --io '$options.io'
+        #end if
+        #if str($options.vm) != "":
+            --vm '$options.vm'
+        #end if
+        #if str($options.vm_bytes) != "":
+            --vm-bytes '$options.vm_bytes'
+        #end if
+        $options.metrics
+        #if str($options.timeout) != "":
+            --timeout '$options.timeout'
+        #end if
+    #else if str($options.do) == "all":
+        #if str($options.general.taskset) != '':
+            --taskset '$options.general.taskset'
+        #end if
+        #if str($options.general.timeout) != '':
+            --timeout '$options.general.timeout'
+        #end if
+        $options.general.aggressive
+        $options.general.maximize
+        $options.general.metrics
+        $options.general.metrics_brief
+        $options.general.times
+        #if str($options.stressor.cpu) != '':
+            --cpu '$options.stressor.cpu'
+        #end if
+        #if str($options.stressor.cpu_ops) != '':
+            --cpu-ops '$options.stressor.cpu_ops'
+        #end if
+        #if str($options.stressor.cpu_load) != '':
+            --cpu-load '$options.stressor.cpu_load'
+        #end if
+        #if str($options.stressor.cpu_method) != 'None':
+            --cpu-method '$options.stressor.cpu_method'
+        #end if
+        #if str($options.stressor.cyclic) != '':
+            --cyclic '$options.stressor.cyclic'
+        #end if
+        #if str($options.stressor.cyclic_method) != 'None':
+            --cyclic-method '$options.stressor.cyclic_method'
+        #end if
+        #if str($options.stressor.cyclic_dist) != '':
+            --cyclic-dist '$options.stressor.cyclic_dist'
+        #end if
+        #if str($options.stressor.cyclic_prio) != '':
+            --cyclic-prio '$options.stressor.cyclic_prio'
+        #end if
+        #if str($options.stressor.cyclic_sleep) != '':
+            --cyclic-sleep '$options.stressor.cyclic_sleep'
+        #end if
+        #if str($options.stressor.fork) != '':
+            --fork '$options.stressor.fork'
+        #end if
+        #if str($options.stressor.hdd) != '':
+            --hdd '$options.stressor.hdd'
+        #end if
+        #if str($options.stressor.io) != '':
+            --io '$options.stressor.io'
+        #end if
+        #if str($options.stressor.iomix) != '':
+            --iomix '$options.stressor.iomix'
+        #end if
+        #if str($options.stressor.iomix_bytes) != '':
+            --iomix-bytes '$options.stressor.iomix_bytes'
+        #end if
+        #if str($options.stressor.vm) != '':
+            --vm '$options.stressor.vm'
+        #end if
+        #if str($options.stressor.vm_bytes) != '':
+            --vm-bytes '$options.stressor.vm_bytes'
+        #end if
+    #end if
+    > '$outfile' 2>&1
+    ]]></command>
+    <inputs>
+        <conditional name="options">
+            <param name="do" type="select" label="Complexity">
+                <option selected="true" value="common">Common options (recommended)</option>
+                <option value="all">All options (advanced)</option>
+            </param>
+            <when value="common">
+                <param argument="--cpu" type="integer" min="0" optional="true" label="Number of CPU stressors" help="Start N workers that exercise the CPU by computing sqrt(rand()). Use 0 to run on all online CPUs. Leave empty to skip."/>
+                <param argument="--cpu-load" type="integer" min="0" max="100" optional="true" label="CPU load percentage" help="Load the CPU(s) by P percent. 0 means sleep (idle), 100 means full load. Lower values reduce heat and power consumption."/>
+                <param argument="--hdd" type="integer" min="0" optional="true" label="Number of disk I/O stressors" help="Start N workers that exercise the hard drive by writing and deleting temporary files. These produce significant disk activity."/>
+                <param argument="--io" type="integer" min="0" optional="true" label="Number of I/O stressors" help="Start N workers that exercise I/O by calling sync(). These stress the system's I/O subsystem."/>
+                <param argument="--vm" type="integer" min="0" optional="true" label="Number of virtual memory stressors" help="Start N workers that exercise virtual memory by allocating and freeing memory regions."/>
+                <param argument="--vm-bytes" type="text" optional="true" label="Memory per VM stressor" help="Amount of memory to allocate per virtual memory worker. Accepts sizes like 256M, 1G, or a percentage of total memory (e.g. 80%). Default is 256 MB per worker.">
+                    <expand macro="sanitize_filesize"/>
+                </param>
+                <param argument="--metrics" type="boolean" truevalue="--metrics" falsevalue="" checked="false" label="Show performance metrics" help="Print a summary of bogo-operations per second for each stressor at the end of the run. Useful for comparing performance across runs."/>
+                <param argument="--timeout" type="text" value="10s" label="Run duration" help="Stop the stress test after the specified time. Format: a number followed by s (seconds), m (minutes), or h (hours). Default is 10 seconds.">
+                    <expand macro="sanitize_time"/>
+                </param>
+            </when>
+            <when value="all">
+                <section name="general" title="General control options" expanded="true">
+                    <param argument="--taskset" type="text" optional="true" label="CPU affinity" help="Pin stressors to specific CPUs. Format: comma-separated CPU numbers and ranges, e.g. '0,2-4,6'. Useful for testing specific cores."/>
+                    <param argument="--timeout" type="text" value="10s" label="Run duration" help="Stop after the specified time. Format: number + s/m/h (e.g. 30s, 5m, 1h). Default: 10 seconds.">
+                        <expand macro="sanitize_time"/>
+                    </param>
+                    <param argument="--aggressive" type="boolean" truevalue="--aggressive" falsevalue="" checked="false" label="Aggressive mode" help="Enable the most demanding options for each stressor (larger memory allocations, more file handles, etc.). Produces maximum load."/>
+                    <param argument="--maximize" type="boolean" truevalue="--maximize" falsevalue="" checked="false" label="Maximize resource usage" help="Push each stressor to use the maximum available resources (memory, file space, etc.). Use with caution on production systems."/>
+                    <param argument="--metrics" type="boolean" truevalue="--metrics" falsevalue="" checked="false" label="Show performance metrics" help="Print a detailed summary of bogo-operations per second for each stressor."/>
+                    <param argument="--metrics-brief" type="boolean" truevalue="--metrics-brief" falsevalue="" checked="false" label="Brief metrics" help="Print only the non-zero bogo-operations per second metrics. Less verbose than full metrics."/>
+                    <param argument="--times" type="boolean" truevalue="--times" falsevalue="" checked="false" label="Show timing statistics" help="Display overall time utilisation statistics at the end of the run, including user/system time and load averages."/>
+                </section>
+                <section name="stressor" title="Individual stressors" expanded="false">
+                    <param argument="--cpu" type="integer" min="0" optional="true" label="CPU stressors" help="Start N workers that exercise the CPU by computing sqrt(rand()). Use 0 for all online CPUs."/>
+                    <param argument="--cpu-ops" type="integer" min="0" optional="true" label="CPU operations limit" help="Stop each CPU stressor after N bogo-operations instead of waiting for the timeout. Useful for short, controlled runs."/>
+                    <param argument="--cpu-load" type="integer" min="0" max="100" optional="true" label="CPU load percentage" help="Load the CPU(s) by P percent. 0 = sleep, 100 = full load. Allows throttling CPU usage."/>
+                    <param argument="--cpu-method" type="select" optional="true" label="CPU stress method" help="Select the computation method used by the CPU stressors. Different methods stress different arithmetic operations.">
+                        <option value="all">All methods (cycle through each)</option>
+                        <option value="loop">Loop (simple counter)</option>
+                        <option value="jensen">Jensen's device (floating-point)</option>
+                        <option value="log2">Logarithm base 2</option>
+                        <option value="explog">Exponent and logarithm</option>
+                        <option value="floor">Floor function</option>
+                        <option value="trig">Trigonometric functions</option>
+                        <option value="inverse">Inverse trigonometric</option>
+                        <option value="hyperbolic">Hyperbolic functions</option>
+                        <option value="omega">Omega function</option>
+                        <option value="gamma">Gamma function</option>
+                        <option value="gcd">Greatest common divisor</option>
+                        <option value="matrix">Matrix operations</option>
+                        <option value="prod">Product of primes</option>
+                        <option value="pythagoras">Pythagorean triples</option>
+                        <option value="fft">Fast Fourier Transform</option>
+                        <option value="rand">Random number generation</option>
+                        <option value="hash">Hashing</option>
+                        <option value="matrix-3d">3D matrix operations</option>
+                        <option value="matrix-yx">Matrix YxX multiply</option>
+                        <option value="nop">No operation (syscall overhead)</option>
+                        <option value="parity">Parity calculation</option>
+                        <option value="prime">Prime number sieve</option>
+                        <option value="roman">Roman numeral conversion</option>
+                    </param>
+                    <param argument="--cyclic" type="integer" min="0" optional="true" label="Cyclic latency stressors" help="Start N workers that measure real-time scheduling latencies. Requires the CAP_SYS_NICE capability for accurate results."/>
+                    <param argument="--cyclic-method" type="select" optional="true" label="Cyclic measurement method" help="Method used to sleep between cyclic latency measurements.">
+                        <option value="usleep">usleep (microsecond sleep)</option>
+                        <option value="nanosleep">nanosleep (nanosecond sleep)</option>
+                        <option value="clock_ns">clock_nanosleep (high-resolution)</option>
+                    </param>
+                    <param argument="--cyclic-dist" type="integer" min="0" optional="true" label="Cyclic latency distribution interval" help="Interval in nanoseconds for the latency distribution histogram. E.g. 2500 means histogram buckets of 2500 ns each."/>
+                    <param argument="--cyclic-prio" type="integer" min="1" optional="true" label="Cyclic scheduling priority" help="Real-time scheduling priority for the cyclic stressor. Range 1-100. Higher values get more CPU time. Requires CAP_SYS_NICE."/>
+                    <param argument="--cyclic-sleep" type="integer" min="0" optional="true" label="Cyclic sleep interval (nanoseconds)" help="Sleep duration in nanoseconds between cyclic latency measurements. E.g. 10000 = 10 microseconds."/>
+                    <param argument="--fork" type="integer" min="0" optional="true" label="Fork stressors" help="Start N workers that rapidly create (fork) and reap child processes. Tests process creation and destruction performance."/>
+                    <param argument="--hdd" type="integer" min="0" optional="true" label="Disk I/O stressors" help="Start N workers that write and delete temporary files on the hard drive. Produces significant disk activity."/>
+                    <param argument="--io" type="integer" min="0" optional="true" label="I/O sync stressors" help="Start N workers that call sync() to flush filesystem buffers. Stresses the I/O subsystem and kernel."/>
+                    <param argument="--iomix" type="integer" min="0" optional="true" label="Mixed I/O stressors" help="Start N workers that perform a mix of read, write, and seek operations on temporary files. More realistic I/O workload than --io or --hdd alone."/>
+                    <param argument="--iomix-bytes" type="text" optional="true" label="I/O mix file size" help="Total size of the temporary files used by the iomix stressors. Accepts sizes like 10M, 1G, or a percentage of free disk space (e.g. 10%).">
+                        <expand macro="sanitize_filesize"/>
+                    </param>
+                    <param argument="--vm" type="integer" min="0" optional="true" label="Virtual memory stressors" help="Start N workers that allocate and free memory regions, stressing the virtual memory subsystem."/>
+                    <param argument="--vm-bytes" type="text" optional="true" label="Memory per VM stressor" help="Amount of memory to allocate per virtual memory worker. Accepts sizes like 256M, 1G, or a percentage of total memory (e.g. 80%). Default: 256 MB.">
+                        <expand macro="sanitize_filesize"/>
+                    </param>
+                </section>
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data name="outfile" format="txt" label="${tool.name} output"/>
+    </outputs>
+    <tests>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="common"/>
+                <param name="cpu" value="1"/>
+                <param name="cpu_load" value="1"/>
+                <param name="vm" value="1"/>
+                <param name="vm_bytes" value="256M"/>
+                <param name="timeout" value="2s"/>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 1 cpu, 1 vm"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="1"/>
+                    <param name="cpu_load" value="1"/>
+                    <param name="vm" value="1"/>
+                    <param name="vm_bytes" value="256M"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 1 cpu, 1 vm"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="2"/>
+                    <param name="io" value="1"/>
+                    <param name="vm" value="1"/>
+                    <param name="vm_bytes" value="128M"/>
+                    <param name="fork" value="1"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 2 cpu, 1 fork, 1 io, 1 vm"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="2"/>
+                    <param name="io" value="1"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 2 cpu, 1 io"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="common"/>
+                <param name="cpu" value="2"/>
+                <param name="io" value="1"/>
+                <param name="timeout" value="2s"/>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 2 cpu, 1 io"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="vm" value="2"/>
+                    <param name="vm_bytes" value="256M"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 2 vm"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="1"/>
+                    <param name="io" value="1"/>
+                    <param name="vm" value="1"/>
+                    <param name="vm_bytes" value="256M"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 1 cpu, 1 io, 1 vm"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="iomix" value="1"/>
+                    <param name="iomix_bytes" value="10%"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 1 iomix"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cyclic" value="1"/>
+                    <param name="cyclic_dist" value="2500"/>
+                    <param name="cyclic_method" value="usleep"/>
+                    <param name="cyclic_prio" value="100"/>
+                    <param name="cyclic_sleep" value="10000"/>
+                    <param name="hdd" value="0"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="3s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text_matching expression="dispatching hogs: [0-9]+ hdd"/>
+                    <has_text text="successful"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="2"/>
+                    <param name="cpu_ops" value="100000"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="5s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 2 cpu"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="2"/>
+                    <param name="cpu_method" value="fft"/>
+                    <param name="cpu_ops" value="10000"/>
+                </section>
+                <section name="general">
+                    <param name="metrics_brief" value="true"/>
+                    <param name="timeout" value="5s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text_matching expression="dispatching hogs: [0-9]+ cpu"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="1"/>
+                    <param name="cpu_method" value="all"/>
+                    <param name="cpu_load" value="90"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="5s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs: 1 cpu"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="0"/>
+                    <param name="cpu_method" value="all"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="5s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text_matching expression="dispatching hogs: [0-9]+ cpu"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="1"/>
+                </section>
+                <section name="general">
+                    <param name="timeout" value="2s"/>
+                    <param name="times" value="true"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="successful run completed in"/>
+                    <has_text text="available CPU time"/>
+                    <has_text text="total time"/>
+                    <has_text text="load average: "/>
+                </assert_contents>
+            </output>
+        </test>
+        <test expect_num_outputs="1">
+            <conditional name="options">
+                <param name="do" value="all"/>
+                <section name="stressor">
+                    <param name="cpu" value="1"/>
+                </section>
+                <section name="general">
+                    <param name="taskset" value="0,0-1"/>
+                    <param name="timeout" value="2s"/>
+                </section>
+            </conditional>
+            <output name="outfile">
+                <assert_contents>
+                    <has_text text="dispatching hogs:"/>
+                    <has_text text="successful run completed in"/>
+                </assert_contents>
+            </output>
+        </test>
+    </tests>
+    <help format="markdown"><![CDATA[
+**stress-ng** — Stress test a computer system in various selectable ways
+
+stress-ng was originally intended to make a machine work hard and trip hardware
+issues such as thermal overruns as well as operating system bugs that only
+occur when a system is being thrashed hard. Use stress-ng with caution as some
+of the tests can make a system run hot on poorly designed hardware and also can
+cause excessive system thrashing which may be difficult to stop.
+
+stress-ng can also measure test throughput rates; this can be useful to observe
+performance changes across different operating system releases or types of
+hardware. However, it has never been intended to be used as a precise benchmark
+test suite, so do **not** use it in this manner.
+
+-----
+
+**Common options** provides quick access to the most frequently used stressors
+(CPU, disk, I/O, virtual memory) with sensible defaults.
+
+**All options** exposes additional stressors (fork, iomix, cyclic latency)
+and control parameters such as CPU affinity pinning, metrics, and timing
+statistics.
+
+**Run duration** controls how long the test runs. Start with short durations
+(e.g. 10 seconds) to verify your system handles the load before running longer
+tests.
+
+**Bogo-operations** are a stress-ng concept: each stressor defines its own unit
+of work (a "bogo-operation"). The `--metrics` flag reports how many
+bogo-operations per second each stressor achieved, which can be useful for
+relative performance comparisons.
+
+-----
+
+**Examples**
+
+`--cpu 4 --io 2 --vm 1 --vm-bytes 1G --timeout 60s`
+  Run for 60 seconds with 4 CPU stressors, 2 I/O stressors, and 1 VM stressor
+  using 1 GB of memory.
+
+`--vm 8 --vm-bytes 80% --timeout 1h`
+  Run 8 virtual memory stressors that combined use 80% of available memory for
+  1 hour. Each stressor uses 10% of available memory.
+
+`--cpu 4 --cpu-method fft --cpu-ops 10000 --metrics-brief`
+  Run 4 FFT CPU stressors, stop after 10000 bogo-operations, and produce a brief
+  metrics summary.
+
+`--fork 4 --timeout 30s`
+  Run 4 fork stressors for 30 seconds to exercise process creation and
+  destruction performance.
+
+Project: https://github.com/ColinIanKing/stress-ng
+    ]]></help>
+    <citations>
+        <citation type="doi">10.1109/BAPC.2017.12</citation>
+    </citations>
+</tool>

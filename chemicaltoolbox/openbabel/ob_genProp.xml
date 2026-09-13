@@ -1,17 +1,22 @@
-<tool id="openbabel_genProp" name="Compute physico-chemical properties" version="@VERSION@.0">
+<tool id="openbabel_genProp" name="Compute physico-chemical properties" version="@TOOL_VERSION@+galaxy@GALAXY_VERSION@">
     <description>for a set of molecules</description>
     <!--parallelism method="multi" split_inputs="infile" split_mode="to_size" split_size="10000" shared_inputs="" merge_outputs="outfile"></parallelism-->
     <macros>
         <import>macros.xml</import>
+        <token name="@GALAXY_VERSION@">2</token>
     </macros>
     <expand macro="requirements"/>
+    <required_files>
+        <include path="ob_genProp.py"/>
+        <include path="cheminfolib.py"/>
+    </required_files>
     <command detect_errors="aggressive">
 <![CDATA[
     python '$__tool_directory__/ob_genProp.py'
       -i '${infile}'
       --iformat '${infile.ext}'
       --oformat '${output_opts.output_format_types}'
-      #if $output_opts.header.value:
+      #if $output_opts.output_format_types == 'table':
             --header $output_opts.header
       #end if
       -o '${outfile}'
@@ -27,9 +32,7 @@
             <when value="table">
                 <param name="header" type="boolean" checked="False" label="Print the headers of the table as the first row of the table"/>
             </when>
-            <when value="sdf">
-                <param name="header" type="hidden"/>
-            </when>
+            <when value="sdf" />
         </conditional>
     </inputs>
     <outputs>
@@ -42,13 +45,17 @@
     <tests>
         <test>
             <param name="infile" ftype="sdf" value="CID_2244.sdf"/>
-            <param name="output_format_types" value="sdf" />
+            <conditional name="output_opts">
+                <param name="output_format_types" value="sdf" />
+            </conditional>
             <output name="outfile" ftype="sdf" file="ob_genprop_on_CID2244.sdf" lines_diff="2" />
         </test>
         <test>
             <param name="infile" ftype="sdf" value="CID_2244.sdf"/>
-            <param name="output_format_types" value="table" />
-            <param name="header" value="true" />
+            <conditional name="output_opts">
+                <param name="output_format_types" value="table" />
+                <param name="header" value="true" />
+            </conditional>
             <output name="outfile" ftype="tabular" file="ob_genprop_on_CID2244.tabular" />
         </test>
     </tests>
@@ -97,7 +104,7 @@ The following physico-chemical properties and descriptors are computed for each 
 - MOL2_
 
 .. _SDF: http://en.wikipedia.org/wiki/Chemical_table_file
-.. _MOL2: http://www.tripos.com/index.php?family=modules,SimplePage,Mol2_File_Format2009
+.. _MOL2: https://paulbourke.net/dataformats/mol2/
 
 3D coordinates of the molecules have to be provided.
 
@@ -129,9 +136,9 @@ Silicos_ - |Spectrophores (TM)| is a registered tool implemented in the open-sou
 
 `Open Babel`_
 
-.. _Open Babel: http://openbabel.org/wiki/Main_Page
+.. _Open Babel: https://open-babel.readthedocs.io/en/latest/index.html
 .. _`Pybel: a Python wrapper for the OpenBabel cheminformatics toolkit`: http://www.biomedcentral.com/content/pdf/1752-153X-2-5.pdf
-.. _Silicos: http://openbabel.org/docs/dev/Fingerprints/spectrophore.html
+.. _Silicos: https://open-babel.readthedocs.io/en/latest/Fingerprints/spectrophore.html
 
 
 ]]>

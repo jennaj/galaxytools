@@ -1,10 +1,11 @@
-<tool id="tp_sed_tool" name="Text transformation" version="@BASE_VERSION@.1">
+<tool id="tp_sed_tool" name="Text transformation" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="@PROFILE@">
     <description>with sed</description>
     <macros>
         <import>macros.xml</import>
     </macros>
+    <expand macro="creator"/>
     <requirements>
-        <requirement type="package" version="4.4">sed</requirement>
+        <requirement type="package" version="4.9">sed</requirement>
     </requirements>
     <version_command>sed --version | head -n 1</version_command>
     <command>
@@ -55,14 +56,19 @@
         <test>
             <param name="infile" value="sed1.txt" />
             <param name="code" value="1d ; s/foo/bar/" />
-            <param name="silent" value="" />
+            <conditional name="adv_opts">
+                <param name="adv_opts_selector" value="advanced" />
+                <param name="silent" value="" />
+            </conditional>
             <output name="output" file="sed_results1.txt" />
         </test>
         <test>
             <param name="infile" value="sed1.txt" />
             <param name="code" value="/foo/ { s/foo/baz/g ; p }" />
-            <param name="adv_opts_selector" value="advanced" />
-            <param name="silent" value="-n" />
+            <conditional name="adv_opts">
+                <param name="adv_opts_selector" value="advanced" />
+                <param name="silent" value="-n" />
+            </conditional>
             <output name="output" file="sed_results2.txt" />
         </test>
     </tests>
@@ -82,7 +88,7 @@ This tool runs the unix **sed** command on the selected data file.
 
 - Short sed tutorial (http://www.linuxhowtos.org/System/sed_tutorial.htm)
 - Long sed tutorial (http://www.grymoire.com/Unix/Sed.html)
-- sed faq with good examples (http://sed.sourceforge.net/sedfaq.html)
+- sed faq with good examples (https://www.pement.org/sed/sedfaq.html)
 - sed cheat-sheet (http://www.catonmat.net/download/sed.stream.editor.cheat.sheet.pdf)
 
 -----
@@ -126,7 +132,6 @@ The select tool searches the data for lines containing or not containing a match
 
 **Note**: SED uses extended regular expression syntax, not Perl syntax. **\\d**, **\\w**, **\\s** etc. are **not** supported.
 
-@REFERENCES@
 ]]>
     </help>
     <expand macro="citations" />

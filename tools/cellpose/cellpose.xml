@@ -1,0 +1,135 @@
+<tool id="cellpose" name="Run generalist cell and nucleus segmentation" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="23.02">
+    <description>with Cellpose 3</description>
+    <macros>
+        <token name="@TOOL_VERSION@">3.1.0</token>
+        <token name="@VERSION_SUFFIX@">3</token>
+    </macros>
+    <requirements>
+        <container type="docker">quay.io/biocontainers/cellpose:@TOOL_VERSION@</container>
+    </requirements>
+    <stdio>
+        <exit_code range="1:" level="fatal" description="Error occurred. Please check Tool Standard Error"/>
+    </stdio>
+    <version_command>echo "@VERSION@"</version_command>
+    <command detect_errors="exit_code">
+        <![CDATA[
+        export MKL_NUM_THREADS=1 &&
+        export CELLPOSE_LOCAL_MODELS_PATH='cellpose_models' &&
+        mkdir -p segmentation &&
+        ln -s '${img_in}' ./image.${img_in.ext} &&
+
+        python '$__tool_directory__/cp_segmentation.py'
+            --inputs '$inputs'
+            --img_path ./image.${img_in.ext}
+            --output_dir ./segmentation
+        ]]>
+    </command>
+    <configfiles>
+        <inputs name="inputs" />
+    </configfiles>
+    <inputs>
+        <param name="img_in" type="data" format="ome.tiff,tiff,jpg,png" label="Choose the image file for segmentation (usually after registration)">
+            <validator type="dataset_metadata_in_range" metadata_name="channels" min="0" max="1" message="Input image is not single channel."/>
+            <validator type="dataset_metadata_in_range" metadata_name="frames" min="0" max="1" message="Input image is a multi-frame image sequence, must be a single-frame image."/>
+        </param>
+        <param name="model_type" type="select" label="Choose the pre-trained model type">
+            <option value="nuclei" selected="true">nuclei</option>
+            <option value="cyto">cyto</option>
+            <option value="cyto2">cyto2</option>
+            <option value="cyto3">cyto3</option>
+        </param>
+        <param name="show_segmentation" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Whether to show segmentation?"/>
+	    <param name="use_gpu" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Whether to use GPU?" />
+        <section name="options" title="Advanced Options" expanded="False">
+            <param argument="diameter" type="float" optional="true" label="Cell or nuclei diameter in pixels" help="Leave blank for automated estimation."/>
+            <param name="resample" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Run dynamics on the resampled image?"
+                help="Interpolated flows at the true image size. This option will create smoother ROIs when the cells are large but will be slower in case"/>
+            <param argument="flow_threshold" type="float" min="0" value="0.4" label="Flow error threshold (all cells with errors below threshold are kept) (not used for 3D)"/>
+            <param argument="cellprob_threshold" type="float" value="0.0" label="Cell probability threshold (all pixels with prob above threshold kept for masks)"/>
+            <param argument="niter" type="integer" min="0" value="0" label="Number of iterations"
+                help="By defalut, sets the number of iterations to be proportional to the ROI diameter. For longer ROIs, more iterations might be needed."/>
+            <param argument="do_3D" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Whether to run 3D segmentation on 4D image input?"/>
+            <param argument="rescale" type="float" value="" optional="true" label="If diameter is set to None, and rescale is not None, then rescale is used instead of diameter for resizing image"/>
+            <param argument="invert" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Whether to invert image pixel intensity before running network?"/>
+        </section>
+    </inputs>
+    <outputs>
+        <data format="tiff" name="cp_mask" from_work_dir="segmentation/cp_masks.tif" label="Cellpose ${model_type} masks on ${on_string}"/>
+        <data format="png" name="cp_segm" from_work_dir="segmentation/segm_show.png" label="Segmentation Show on ${on_string}">
+            <filter>show_segmentation</filter>
+        </data>
+    </outputs>
+    <tests>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="model_type" value="cyto"/>
+            <output name="cp_mask" file="img01_XY_cyto_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img01_XY_cyto_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="model_type" value="cyto2"/>
+            <output name="cp_mask" file="img01_XY_cyto2_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img01_XY_cyto2_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="model_type" value="cyto3"/>
+            <output name="cp_mask" file="img01_XY_cyto3_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img01_XY_cyto3_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img02_XY_nuclei.png"/>
+            <param name="model_type" value="nuclei"/>
+            <output name="cp_mask" file="img02_XY_nuclei_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img02_XY_nuclei_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="model_type" value="cyto"/>
+            <section name="options">
+                <param name="diameter" value="50"/>
+            </section>
+            <output name="cp_mask" file="img01_XY_cyto_dia_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img01_XY_cyto_dia_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="use_gpu" value="true"/>
+            <param name="model_type" value="cyto"/>
+            <output name="cp_mask" file="img01_XY_cyto_gpu_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img01_XY_cyto_gpu_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="1">
+            <param name="img_in" value="img01_XY_cyto.png"/>
+            <param name="model_type" value="cyto"/>
+            <param name="show_segmentation" value="false"/>
+            <output name="cp_mask" file="img01_XY_cyto_masks.tiff" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img03_CXY_nuclei.tiff"/>
+            <param name="model_type" value="nuclei"/>
+            <output name="cp_mask" file="img03_CXY_nuclei_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img03_CXY_nuclei_segm.png" compare="image_diff"/>
+        </test>
+        <test expect_num_outputs="2">
+            <param name="img_in" value="img04_XYC_nuclei.tiff"/>
+            <param name="model_type" value="nuclei"/>
+            <output name="cp_mask" file="img04_XYC_nuclei_masks.tiff" compare="image_diff"/>
+            <output name="cp_segm" file="img04_XYC_nuclei_segm.png" compare="image_diff"/>
+        </test>
+    </tests>
+    <help>
+        <![CDATA[
+        Cellpose: A generalist algorithm for cell and nucleus segmentation.
+        **Important:**
+        Only singlechannel 2-D images are supported. If a channel axis is present, it must be a singleton axis (axis of length 1) and it must be either the first or the last axis within the axes layout (e.g., YX, YXC, or CYX). Other layouts are not accepted (e.g. CYXZ, XYCZ).
+        In case of multichannel images, it is necessary to priorly extract the channel for segmentation using the `Split image along axes`_ tool.
+        
+        .. _Split image along axes: ?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Fimgteam%2Fsplit_image%2Fip_split_image
+        ]]>
+    </help>
+    <citations>
+        <citation type="doi">10.25378/janelia.27854442</citation>
+    </citations>
+</tool>
